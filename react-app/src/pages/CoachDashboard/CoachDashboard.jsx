@@ -2,25 +2,13 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../Navbar";
 
 export default function CoachDashboard() {
-  const [players, setPlayers] = useState([ ]);
-  
+  const [players, setPlayers] = useState([]);
+  const [injuryCount, setInjuryCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [newName, setNewName] = useState("");
   const [newSurname, setNewSurname] = useState("");
-  const [newRole, setNewRole] = useState("Striker"); 
+  const [newRole, setNewRole] = useState("Striker");
   const [newContractEnd, setNewContractEnd] = useState("");
-
-  const handleOpenModal = () => {
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setNewName("");
-    setNewSurname("");
-    setNewRole("Striker");
-    setNewContractEnd("");
-  };
 
   useEffect(() => {
     async function fetchPlayers() {
@@ -37,47 +25,55 @@ export default function CoachDashboard() {
     fetchPlayers();
   }, []);
 
+  useEffect(() => {
+    async function fetchInjuryCount() {
+      try {
+        const res = await fetch("http://localhost:8000/api/injury-count/");
+        if (!res.ok) throw new Error("Failed to fetch injury count");
+        const data = await res.json();
+        setInjuryCount(data.injury_count); 
+      } catch (err) {
+        console.error(err);
+        alert(err.message);
+      }
+    }
+    fetchInjuryCount();
+  }, []);
+
+  const handleOpenModal = () => {
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setNewName("");
+    setNewSurname("");
+    setNewRole("Striker");
+    setNewContractEnd("");
+  };
+
   async function handleAddPlayer(e) {
     e.preventDefault();
     try {
-      // Build FormData instead of JSON
       const formData = new FormData();
       formData.append("name", newName);
       formData.append("surname", newSurname);
       formData.append("role", newRole);
       formData.append("contract_end", newContractEnd);
-    
+
       const response = await fetch("http://localhost:8000/api/add_player/", {
         method: "POST",
         body: formData,
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to add player");
       }
-  
+
       const data = await response.json();
-      console.log("Player added:", data);
       setPlayers((prev) => [...prev, data.player]);
-  
       handleCloseModal();
-    } catch (err) {
-      console.error(err);
-      alert(err.message);
-    }
-  }
-
-  useEffect(() => {
-    fetchPlayers();
-  }, []);
-
-  async function fetchPlayers() {
-    try {
-      const res = await fetch("http://localhost:8000/api/players/");
-      if (!res.ok) throw new Error("Failed to fetch players");
-      const data = await res.json();
-      setPlayers(data);
     } catch (err) {
       console.error(err);
       alert(err.message);
@@ -93,7 +89,7 @@ export default function CoachDashboard() {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to remove player");
       }
-      setPlayers(prev => prev.filter(p => p.player_id !== playerId));
+      setPlayers((prev) => prev.filter((p) => p.player_id !== playerId));
     } catch (err) {
       console.error(err);
       alert(err.message);
@@ -102,9 +98,21 @@ export default function CoachDashboard() {
 
   return (
     <div className="bg-white min-h-screen">
-      <Navbar />
+      <Navbar role="coach" />
       <div className="p-8">
-        <h1 className="text-3xl font-bold mb-6">COACH DASHBOARD</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold mb-6">COACH DASHBOARD</h1>
+          <div className="relative inline-block">
+            <span className="text-xl font-bold">Injury Reports</span>
+            <div
+              className="absolute -top-2 -right-6 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold"
+              title={`${injuryCount} injuries reported`}
+            >
+              {injuryCount}
+            </div>
+          </div>
+        </div>
+
         <button
           className="bg-green-700 text-white px-4 py-2 rounded mb-6 hover:bg-green-800"
           onClick={handleOpenModal}
@@ -158,8 +166,6 @@ export default function CoachDashboard() {
                     onChange={(e) => setNewContractEnd(e.target.value)}
                   />
                 </div>
-                <div>
-              </div>
                 <div className="flex gap-4 mt-4">
                   <button
                     type="submit"
@@ -182,14 +188,16 @@ export default function CoachDashboard() {
         <div className="space-y-4">
           {players.map((player) => (
             <div
-              key={player.id}
+              key={player.player_id}
               className={`p-4 flex items-center justify-between ${
                 player.id % 2 === 1 ? "bg-red-600" : "bg-black"
               } text-white rounded`}
             >
               <div className="flex items-center">
                 <div>
-                  <p className="text-lg font-semibold">{player.name} {player.surname}</p>
+                  <p className="text-lg font-semibold">
+                    {player.name} {player.surname}
+                  </p>
                   <p>{player.position}</p>
                   <p>Contract valid until: {player.contract_ends}</p>
                 </div>
@@ -198,7 +206,10 @@ export default function CoachDashboard() {
                 <button className="bg-white text-black px-3 py-1 rounded hover:bg-gray-200">
                   Add statistics
                 </button>
-                <button className="bg-white text-black px-3 py-1 rounded hover:bg-gray-200" onClick={() => handleRemovePlayer(player.player_id)}>
+                <button
+                  className="bg-white text-black px-3 py-1 rounded hover:bg-gray-200"
+                  onClick={() => handleRemovePlayer(player.player_id)}
+                >
                   Remove player
                 </button>
               </div>

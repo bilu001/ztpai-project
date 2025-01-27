@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'djangoapp',
     'corsheaders',
+    'rest_framework',
+    'drf_yasg',  
 ]
 
 MIDDLEWARE = [
@@ -59,6 +61,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
 CORS_ALLOW_CREDENTIALS = True
+SESSION_COOKIE_SECURE = False 
+CSRF_COOKIE_SECURE = False
 
 ROOT_URLCONF = 'djangoapp.urls'
 

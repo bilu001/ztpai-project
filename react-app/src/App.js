@@ -2,8 +2,8 @@ import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login/Login";
 import CoachDashboard from "./pages/CoachDashboard/CoachDashboard";
 import PlayerDashboard from "./pages/PlayerDashboard/PlayerDashboard";
-import LeagueNews from "./pages/LeagueNews/LeagueNews";
-// etc...
+import ChangePassword from "./pages/ChangePassword/ChangePassword";
+import ReportInjury from "./pages/ReportInjury/ReportInjury";
 
 export default function App() {
   return (
@@ -11,7 +11,8 @@ export default function App() {
       <Route path="/" element={<Login />} />
       <Route path="/coach-dashboard" element={<CoachDashboard />} />
       <Route path="/player-dashboard" element={<PlayerDashboard />} />
-      <Route path="/league-news" element={<LeagueNews />} />
+      <Route path="/change-password" element={<ChangePassword />} />
+      <Route path="/report-injury" element={<ReportInjury />} />
     </Routes>
   );
 }

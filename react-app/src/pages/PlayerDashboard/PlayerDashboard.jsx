@@ -6,13 +6,12 @@ export default function PlayerDashboard() {
     goals: 2,
     assists: 1,
     distance: "10km",
-    // ...
     overall: 7.3,
   };
 
   return (
     <div className="bg-gray-900 min-h-screen text-white">
-      <Navbar />
+      <Navbar role="player"/>
       <div className="p-6">
         <h1 className="text-2xl mb-4">Welcome back!</h1>
 

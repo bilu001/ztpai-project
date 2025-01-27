@@ -13,32 +13,37 @@ export default function Login() {
       const response = await fetch("http://localhost:8000/login/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        //credentials: "include",
+        credentials: "include",
         body: JSON.stringify({ username, password }),
       });
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Login failed");
       }
+  
       const data = await response.json();
-      console.log("Login success:", data);
-      if (data.role === "coach") {
+      console.log("Response Data:", data);
+  
+      const role = data.user?.role;
+      if (role === "coach") {
         navigate("/coach-dashboard");
-      }
-      else if (data.role === "player") {
-        if (data.force_password_change) {
+      } else if (role === "player") {
+        if (!data.user.changed_password) {
           navigate("/change-password");
         } else {
           navigate("/player-dashboard");
-        } 
+        }
       } else {
-        alert("You are not a coach nor a player!");
+        alert("Invalid role detected. Please check your user account.");
       }
-      } catch (err) {
-        console.error(err.message);
-        alert(err.message);
-      }
-  };
+    } catch (err) {
+      console.error("Login Error:", err.message);
+      alert(err.message);
+    }
+  }
+  
+  
 
   return (
     <div className="flex min-h-screen">
@@ -72,16 +77,6 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-          </div>
-
-          <div>
-            <a 
-              href="#"
-              className="text-sm text-blue-600 hover:underline inline-block mt-2"
-              onClick={() => alert("Forgot password clicked!")}
-            >
-              Forgot password?
-            </a>
           </div>
           <button
             type="submit"

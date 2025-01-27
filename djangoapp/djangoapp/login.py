@@ -1,75 +1,64 @@
 import json
 from django.http import JsonResponse, HttpResponse
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-
-from djangoapp.models import User
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.hashers import check_password
-
+from djangoapp.models import User
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginView(View):
+    """
+    Handle user login via POST method.
+    """
+
     def options(self, request, *args, **kwargs):
         """
-        Handle the preflight request by returning the CORS headers.
+        Handle the preflight CORS request by returning the CORS headers.
         """
         response = HttpResponse()
         response['Access-Control-Allow-Origin'] = 'http://localhost:3000'
         response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
         response['Access-Control-Allow-Headers'] = 'Content-Type'
-        #response['Access-Control-Allow-Credentials'] = 'true'
         return response
 
     def post(self, request, *args, **kwargs):
+        """
+        Handle user login and return user details or error response.
+        """
         try:
             data = json.loads(request.body)
             username = data.get('username')
             password = data.get('password')
         except (ValueError, KeyError):
-            response = JsonResponse({'error': 'Invalid JSON'}, status=400)
-            response['Access-Control-Allow-Origin'] = 'http://localhost:3000'
-            response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-            response['Access-Control-Allow-Headers'] = 'Content-Type'
-            return response
+            return self._error_response('Invalid JSON or missing fields', 400)
 
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
-            response = JsonResponse({'error': 'Invalid username or password'}, status=401)
-            response['Access-Control-Allow-Origin'] = 'http://localhost:3000'
-            response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-            response['Access-Control-Allow-Headers'] = 'Content-Type'
-            return response
+            return self._error_response('Invalid username or password', 401)
 
         if not check_password(password, user.password):
-            response = JsonResponse({'error': 'Invalid username or password'}, status=401)
-            response['Access-Control-Allow-Origin'] = 'http://localhost:3000'
-            response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-            response['Access-Control-Allow-Headers'] = 'Content-Type'
-            return response
-
-        if user.role != 'coach':
-            request.session['user_id'] = user.user_id
-            request.session['role'] = user.role
-
-            response = JsonResponse({
-                'message': 'User logged',
-                'user_id': user.user_id,
-                'role': user.role
-            }, status=200)
-            response['Access-Control-Allow-Origin'] = 'http://localhost:3000'
-            response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-            response['Access-Control-Allow-Headers'] = 'Content-Type'
-            return response
-
+            return self._error_response('Invalid username or password', 401)
         request.session['user_id'] = user.user_id
         request.session['role'] = user.role
 
-        response = JsonResponse({
+        return JsonResponse({
             'message': 'Login successful',
-            'user_id': user.user_id,
-            'role': user.role
+            'user': {
+                'id': user.user_id,
+                'username': user.username,
+                'role': user.role,
+                'changed_password': user.changed_password
+            }
         }, status=200)
+
+    def _error_response(self, message, status):
+        """
+        Return a standardized error response with CORS headers.
+        """
+        response = JsonResponse({'error': message}, status=status)
         response['Access-Control-Allow-Origin'] = 'http://localhost:3000'
         response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
         response['Access-Control-Allow-Headers'] = 'Content-Type'
@@ -77,11 +66,6 @@ class LoginView(View):
 
     def get(self, request, *args, **kwargs):
         """
-        If someone tries GET, return method not allowed (405),
-        but still attach CORS headers so the browser doesn't complain.
+        Handle invalid GET requests for login.
         """
-        response = JsonResponse({'error': 'Use POST method for login'}, status=405)
-        response['Access-Control-Allow-Origin'] = 'http://localhost:3000'
-        response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-        response['Access-Control-Allow-Headers'] = 'Content-Type'
-        return response
+        return self._error_response('Use POST method for login', 405)

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import milan from "../../assets/milan.png"
 
 export default function ChangePassword() {
@@ -6,38 +7,42 @@ export default function ChangePassword() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const navigate = useNavigate();
+  
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
+  
     if (newPassword !== confirmPassword) {
-      alert("Passwords do not match!");
+      alert("New password and confirmation do not match!");
       return;
     }
-
+  
     try {
       const response = await fetch("http://localhost:8000/change_password/", {
-        method: "POST",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          new_password: newPassword
-        })
+          current_password: currentPassword,
+          new_password: newPassword,
+        }),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to change password");
+        throw new Error(errorData.error || "Error changing password");
       }
-
+  
       const data = await response.json();
-      alert("Password changed successfully! Please log in again.");
-      window.location.href = "/";
+      console.log("Password changed successfully:", data);
+      navigate("/player-dashboard");
     } catch (err) {
-      console.error(err);
+      console.error(err.message);
       alert(err.message);
     }
-  };
-
+  }
+  
   return (
     <div className="flex min-h-screen">
       <div className="w-full md:w-1/2 bg-white flex flex-col justify-center p-8">
